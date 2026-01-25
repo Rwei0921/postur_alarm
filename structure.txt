@@ -1,0 +1,35 @@
+posture_alarm/
+├─ main.py                       # 主程式：流程控制、排程
+├─ config.py                     # 全域設定（閾值、時間、路徑）
+├─ requirements.txt
+│
+├─ core/
+│  ├─ __init__.py
+│  ├─ state_machine.py           # 狀態機（正常/疑似跌倒/已跌倒/久坐）
+│  ├─ utils.py                   # 共用工具（時間、log、簡單函式）
+│
+├─ vision/
+│  ├─ __init__.py
+│  ├─ camera.py                  # 讀取相機畫面（USB/PiCamera）
+│  ├─ person_detector.py         # YOLO 人體偵測
+│  ├─ pose_estimator.py          # MediaPipe Pose 關鍵點
+│  ├─ fall_classifier.py         # 跌倒判定（姿態特徵→分數）
+│
+├─ sensors/
+│  ├─ __init__.py
+│  ├─ imu_mpu6050.py             # IMU 讀取與「劇烈變化」偵測
+│
+├─ alert/
+│  ├─ __init__.py
+│  ├─ buzzer_led.py              # 蜂鳴器/LED 警報
+│  ├─ notifier_line.py           # Line Notify / Line Bot
+│  ├─ notifier_telegram.py       # Telegram Bot
+│
+├─ storage/
+│  ├─ __init__.py
+│  ├─ db_sqlite.py               # SQLite 寫入事件資料
+│  ├─ reporter.py                # 日/週報表（先存CSV也行）
+│
+└─ ui/
+   ├─ __init__.py
+   └─ overlay.py                 # 在畫面上疊字/框框（可選）
