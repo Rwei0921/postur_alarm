@@ -107,7 +107,9 @@ class Camera:
             if self._picamera2 is None:
                 return False, None
             frame = self._picamera2.capture_array()
-            # Picamera2 returns RGB; rest of pipeline expects BGR.
+            # Picamera2 often returns XBGR8888/RGBA; normalize to 3-channel BGR.
+            if frame.ndim == 3 and frame.shape[2] == 4:
+                frame = frame[:, :, :3]
             frame_bgr = frame[..., ::-1].copy()
             return True, frame_bgr
 

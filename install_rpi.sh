@@ -52,11 +52,18 @@ python -m pip install \
   "gpiozero>=2.0"
 
 echo "[5/5] Installing MediaPipe..."
-if python -m pip install "mediapipe>=0.10.0"; then
-  echo "MediaPipe installed successfully."
+python -m pip uninstall -y mediapipe mediapipe-rpi4 >/dev/null 2>&1 || true
+if python -m pip install --no-cache-dir "mediapipe>=0.10.0"; then
+  if python -c "import mediapipe as mp; print(mp.__version__)" >/dev/null 2>&1; then
+    echo "MediaPipe installed successfully."
+  else
+    echo "Installed mediapipe is not importable on this Python. Trying mediapipe-rpi4..."
+    python -m pip uninstall -y mediapipe >/dev/null 2>&1 || true
+    python -m pip install --no-cache-dir mediapipe-rpi4
+  fi
 else
   echo "Official mediapipe wheel failed. Trying mediapipe-rpi4..."
-  python -m pip install mediapipe-rpi4
+  python -m pip install --no-cache-dir mediapipe-rpi4
 fi
 
 echo "\nDone."
