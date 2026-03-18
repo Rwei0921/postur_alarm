@@ -9,6 +9,7 @@ from pathlib import Path
 CAMERA_SOURCE = os.getenv("CAMERA_SOURCE", "0")
 CAMERA_WIDTH = int(os.getenv("CAMERA_WIDTH", "1280"))
 CAMERA_HEIGHT = int(os.getenv("CAMERA_HEIGHT", "720"))
+CAMERA_BACKEND = os.getenv("CAMERA_BACKEND", "auto")
 SHOW_WINDOW = os.getenv("SHOW_WINDOW", "1") == "1"
 
 # MediaPipe / pose

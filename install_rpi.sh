@@ -18,10 +18,9 @@ $SUDO apt-get install -y \
   python3-venv \
   python3-dev \
   build-essential \
-  libatlas-base-dev \
   libopenblas-dev \
   libjpeg-dev \
-  libtiff5-dev \
+  libtiff-dev \
   libopenjp2-7 \
   libavcodec-dev \
   libavformat-dev \
@@ -29,11 +28,15 @@ $SUDO apt-get install -y \
   libgtk-3-dev \
   libglib2.0-0 \
   libgl1 \
-  i2c-tools
+  i2c-tools \
+  v4l-utils \
+  rpicam-apps \
+  python3-opencv \
+  python3-picamera2
 
 echo "[2/5] Preparing Python virtual environment..."
 if [ ! -d ".venv" ]; then
-  python3 -m venv .venv
+  python3 -m venv .venv --system-site-packages
 fi
 
 # shellcheck disable=SC1091
@@ -44,7 +47,6 @@ python -m pip install --upgrade pip setuptools wheel
 
 echo "[4/5] Installing common Python dependencies..."
 python -m pip install \
-  "opencv-python>=4.8.0" \
   "requests>=2.31.0" \
   "smbus2>=0.4.3" \
   "gpiozero>=2.0"

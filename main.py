@@ -28,7 +28,12 @@ def _load_cv2():
 def run() -> None:
     logger = setup_logger()
 
-    cam = Camera(config.CAMERA_SOURCE, config.CAMERA_WIDTH, config.CAMERA_HEIGHT)
+    cam = Camera(
+        config.CAMERA_SOURCE,
+        config.CAMERA_WIDTH,
+        config.CAMERA_HEIGHT,
+        backend=config.CAMERA_BACKEND,
+    )
     person_detector = PersonDetector(
         visibility_threshold=config.POSE_VISIBILITY_THRESHOLD,
         min_visible_keypoints=config.MIN_VISIBLE_KEYPOINTS,

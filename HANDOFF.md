@@ -21,14 +21,17 @@ Last updated: 2026-03-19
 - `PROJECT_STATUS.md`: full project status and roadmap.
 
 ## How to run
-1. Install deps: `pip install -r requirements.txt`
+1. Raspberry Pi one-shot install: `./install_rpi.sh`
 2. Start app: `python main.py`
 
 Optional environment variables:
+- `CAMERA_BACKEND` (`auto` / `picamera2` / `opencv`)
 - `CAMERA_SOURCE`, `SHOW_WINDOW`
 - `SIMULATE_IMU`, `SIMULATE_GPIO`
 - `LINE_NOTIFY_TOKEN`
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+
+For Raspberry Pi Camera Module 3, use `CAMERA_BACKEND=picamera2`.
 
 ## Known gaps
 - Fall detection is rule-based and needs real-world threshold tuning.
