@@ -1,0 +1,62 @@
+"""Frame overlay rendering helpers."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+class Overlay:
+    def __init__(self, font_scale: float = 0.7, thickness: int = 2) -> None:
+        self.font_scale = font_scale
+        self.thickness = thickness
+
+    @staticmethod
+    def _load_cv2() -> Any:
+        try:
+            import cv2
+
+            return cv2
+        except Exception as exc:  # pragma: no cover
+            raise RuntimeError("OpenCV is required for Overlay") from exc
+
+    def draw_status(self, frame: Any, state_text: str, warning: bool = False) -> Any:
+        cv2 = self._load_cv2()
+        color = (0, 0, 255) if warning else (0, 200, 0)
+        cv2.putText(
+            frame,
+            f"State: {state_text}",
+            (20, 35),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            self.font_scale,
+            color,
+            self.thickness,
+            cv2.LINE_AA,
+        )
+        return frame
+
+    def draw_alert(self, frame: Any, message: str) -> Any:
+        cv2 = self._load_cv2()
+        h, w = frame.shape[:2]
+        cv2.rectangle(frame, (10, h - 70), (w - 10, h - 20), (0, 0, 255), 2)
+        cv2.putText(
+            frame,
+            message,
+            (20, h - 38),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            self.font_scale,
+            (0, 0, 255),
+            self.thickness,
+            cv2.LINE_AA,
+        )
+        return frame
+
+    def draw_landmarks(self, frame: Any, landmarks: list[dict[str, float]]) -> Any:
+        cv2 = self._load_cv2()
+        h, w = frame.shape[:2]
+        for lm in landmarks:
+            if lm.get("visibility", 0.0) < 0.3:
+                continue
+            x = int(lm["x"] * w)
+            y = int(lm["y"] * h)
+            cv2.circle(frame, (x, y), 3, (255, 180, 0), -1)
+        return frame

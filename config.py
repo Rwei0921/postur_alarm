@@ -1,0 +1,50 @@
+"""Global configuration for posture alarm pipeline."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+# Camera
+CAMERA_SOURCE = os.getenv("CAMERA_SOURCE", "0")
+CAMERA_WIDTH = int(os.getenv("CAMERA_WIDTH", "1280"))
+CAMERA_HEIGHT = int(os.getenv("CAMERA_HEIGHT", "720"))
+SHOW_WINDOW = os.getenv("SHOW_WINDOW", "1") == "1"
+
+# MediaPipe / pose
+MP_STATIC_IMAGE_MODE = False
+MP_MODEL_COMPLEXITY = int(os.getenv("MP_MODEL_COMPLEXITY", "1"))
+MP_MIN_DETECTION_CONFIDENCE = float(os.getenv("MP_MIN_DETECTION_CONFIDENCE", "0.5"))
+MP_MIN_TRACKING_CONFIDENCE = float(os.getenv("MP_MIN_TRACKING_CONFIDENCE", "0.5"))
+POSE_VISIBILITY_THRESHOLD = float(os.getenv("POSE_VISIBILITY_THRESHOLD", "0.5"))
+MIN_VISIBLE_KEYPOINTS = int(os.getenv("MIN_VISIBLE_KEYPOINTS", "6"))
+
+# Fall detection thresholds
+FALL_TRUNK_ANGLE_THRESHOLD_DEG = float(os.getenv("FALL_TRUNK_ANGLE_THRESHOLD_DEG", "55.0"))
+FALL_HIP_SHOULDER_DIFF_THRESHOLD = float(os.getenv("FALL_HIP_SHOULDER_DIFF_THRESHOLD", "0.12"))
+FALL_SPEED_THRESHOLD = float(os.getenv("FALL_SPEED_THRESHOLD", "0.28"))
+
+# State machine timing (seconds)
+SUSPECT_FALL_TIMEOUT = float(os.getenv("SUSPECT_FALL_TIMEOUT", "2.0"))
+FALL_CONFIRM_SECONDS = float(os.getenv("FALL_CONFIRM_SECONDS", "1.2"))
+SEDENTARY_SECONDS = float(os.getenv("SEDENTARY_SECONDS", "1800"))
+FALL_RECOVERY_SECONDS = float(os.getenv("FALL_RECOVERY_SECONDS", "5.0"))
+
+# Sensors
+SIMULATE_IMU = os.getenv("SIMULATE_IMU", "1") == "1"
+IMU_SHOCK_THRESHOLD_G = float(os.getenv("IMU_SHOCK_THRESHOLD_G", "1.8"))
+
+# Alert
+SIMULATE_GPIO = os.getenv("SIMULATE_GPIO", "1") == "1"
+ALERT_ON_FALL_ONLY = os.getenv("ALERT_ON_FALL_ONLY", "1") == "1"
+
+# Notifier
+LINE_NOTIFY_TOKEN = os.getenv("LINE_NOTIFY_TOKEN", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
+# Storage
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+REPORT_DIR = BASE_DIR / "reports"
+DB_PATH = str(DATA_DIR / "events.db")

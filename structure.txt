@@ -11,7 +11,7 @@ posture_alarm/
 ├─ vision/
 │  ├─ __init__.py
 │  ├─ camera.py                  # 讀取相機畫面（USB/PiCamera）
-│  ├─ person_detector.py         # YOLO 人體偵測
+│  ├─ person_detector.py         # MediaPipe 人體存在偵測
 │  ├─ pose_estimator.py          # MediaPipe Pose 關鍵點
 │  ├─ fall_classifier.py         # 跌倒判定（姿態特徵→分數）
 │
