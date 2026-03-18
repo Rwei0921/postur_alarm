@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import time
 from typing import Any, Tuple
 
 
@@ -13,11 +14,15 @@ class Camera:
         width: int | None = None,
         height: int | None = None,
         backend: str = "auto",
+        warmup_frames: int = 10,
+        read_retry: int = 3,
     ) -> None:
         self.source = int(source) if isinstance(source, str) and source.isdigit() else source
         self.width = width
         self.height = height
         self.backend = backend.lower()
+        self.warmup_frames = max(0, warmup_frames)
+        self.read_retry = max(1, read_retry)
 
         self._cv2 = None
         self.cap = None
@@ -35,6 +40,9 @@ class Camera:
             # auto mode: prefer picamera2 (best for Raspberry Pi Camera Module 3), then fallback to OpenCV.
             if not self._open_picamera2(strict=False):
                 self._open_opencv(strict=True)
+
+        if self._using_backend == "opencv":
+            self._warmup_opencv()
 
     @staticmethod
     def _load_cv2():
@@ -99,6 +107,35 @@ class Camera:
             return self._picamera2 is not None
         return bool(self.cap and self.cap.isOpened())
 
+    def _warmup_opencv(self) -> None:
+        if self.cap is None:
+            return
+        for _ in range(self.warmup_frames):
+            self.cap.read()
+            time.sleep(0.02)
+
+    def _normalize_frame(self, frame: Any) -> Any | None:
+        if frame is None:
+            return None
+
+        if hasattr(frame, "shape"):
+            shape = frame.shape
+            if len(shape) == 2 and shape[0] == 1:
+                flat_size = int(shape[1])
+                if self.width and self.height and flat_size == self.width * self.height * 3:
+                    try:
+                        reshaped = frame.reshape((self.height, self.width, 3))
+                        return reshaped[:, :, ::-1]
+                    except Exception:
+                        return None
+                return None
+            if len(shape) == 3 and shape[2] == 3:
+                return frame
+            if len(shape) == 3 and shape[2] == 4:
+                return frame[:, :, :3]
+
+        return None
+
     def read_frame(self) -> Tuple[bool, Any]:
         if not self.is_opened():
             return False, None
@@ -115,7 +152,13 @@ class Camera:
 
         if self.cap is None:
             return False, None
-        return self.cap.read()
+        for _ in range(self.read_retry):
+            ok, frame = self.cap.read()
+            normalized = self._normalize_frame(frame) if ok else None
+            if ok and normalized is not None:
+                return True, normalized
+            time.sleep(0.01)
+        return False, None
 
     def release(self) -> None:
         if self.cap is not None:

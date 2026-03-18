@@ -33,6 +33,8 @@ def run() -> None:
         config.CAMERA_WIDTH,
         config.CAMERA_HEIGHT,
         backend=config.CAMERA_BACKEND,
+        warmup_frames=config.CAMERA_WARMUP_FRAMES,
+        read_retry=config.CAMERA_READ_RETRY,
     )
     person_detector = PersonDetector(
         visibility_threshold=config.POSE_VISIBILITY_THRESHOLD,
@@ -72,14 +74,26 @@ def run() -> None:
         cv2 = _load_cv2()
 
     previous_state = state_machine.state
+    read_failures = 0
     logger.info("posture_alarm started")
 
     try:
         while True:
             ok, frame = cam.read_frame()
             if not ok:
-                logger.warning("camera frame unavailable, stopping loop")
-                break
+                read_failures += 1
+                if read_failures % 10 == 0:
+                    logger.warning(
+                        "camera frame unavailable (%s/%s)",
+                        read_failures,
+                        config.CAMERA_MAX_READ_FAILURES,
+                    )
+                if read_failures >= config.CAMERA_MAX_READ_FAILURES:
+                    logger.warning("camera frame unavailable, stopping loop")
+                    break
+                time.sleep(0.05)
+                continue
+            read_failures = 0
 
             landmarks = pose_estimator.extract_landmarks(frame)
             person_present = person_detector.has_person(landmarks) if landmarks else False

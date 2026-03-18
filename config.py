@@ -10,6 +10,9 @@ CAMERA_SOURCE = os.getenv("CAMERA_SOURCE", "0")
 CAMERA_WIDTH = int(os.getenv("CAMERA_WIDTH", "1280"))
 CAMERA_HEIGHT = int(os.getenv("CAMERA_HEIGHT", "720"))
 CAMERA_BACKEND = os.getenv("CAMERA_BACKEND", "auto")
+CAMERA_WARMUP_FRAMES = int(os.getenv("CAMERA_WARMUP_FRAMES", "10"))
+CAMERA_READ_RETRY = int(os.getenv("CAMERA_READ_RETRY", "3"))
+CAMERA_MAX_READ_FAILURES = int(os.getenv("CAMERA_MAX_READ_FAILURES", "60"))
 SHOW_WINDOW = os.getenv("SHOW_WINDOW", "1") == "1"
 
 # MediaPipe / pose
