@@ -1,0 +1,42 @@
+# posture_alarm Handoff
+
+Last updated: 2026-03-19
+
+## What is implemented
+- Replaced YOLO-based plan with pure MediaPipe pipeline.
+- Built core modules: camera input, person detection, pose extraction, fall classifier, state machine.
+- Added alert/notifier/storage/ui modules with simulation-friendly defaults.
+- Wired everything in `main.py` and validated import health (`All imports OK`).
+
+## Current runtime flow
+`Camera -> PoseEstimator -> PersonDetector/ FallClassifier -> PostureStateMachine -> Alert + Notify + DB + Overlay`
+
+## Key files
+- `main.py`: app loop and module orchestration.
+- `config.py`: thresholds, camera source, tokens, storage paths.
+- `vision/*.py`: camera, person detection, pose landmarks, fall rules.
+- `core/state_machine.py`: `NORMAL`, `SUSPECT_FALL`, `FALLEN`, `SEDENTARY` transitions.
+- `storage/db_sqlite.py`: SQLite event log.
+- `storage/reporter.py`: daily/weekly CSV report generation.
+- `PROJECT_STATUS.md`: full project status and roadmap.
+
+## How to run
+1. Install deps: `pip install -r requirements.txt`
+2. Start app: `python main.py`
+
+Optional environment variables:
+- `CAMERA_SOURCE`, `SHOW_WINDOW`
+- `SIMULATE_IMU`, `SIMULATE_GPIO`
+- `LINE_NOTIFY_TOKEN`
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+
+## Known gaps
+- Fall detection is rule-based and needs real-world threshold tuning.
+- Alert notify path can send repeated messages in sustained `FALLEN` state.
+- Hardware-specific MPU6050 register decode is still a skeleton.
+
+## Recommended next steps
+1. Add notifier cooldown/dedup logic.
+2. Add multi-frame smoothing/scoring for fall decisions.
+3. Add unit tests for state machine, classifier, and DB.
+4. Add headless deployment notes (systemd) for Raspberry Pi.
