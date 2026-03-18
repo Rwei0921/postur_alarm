@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+if command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+else
+  SUDO=""
+fi
+
+echo "[1/5] Installing system packages..."
+$SUDO apt-get update
+$SUDO apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-venv \
+  python3-dev \
+  build-essential \
+  libatlas-base-dev \
+  libopenblas-dev \
+  libjpeg-dev \
+  libtiff5-dev \
+  libopenjp2-7 \
+  libavcodec-dev \
+  libavformat-dev \
+  libswscale-dev \
+  libgtk-3-dev \
+  libglib2.0-0 \
+  libgl1 \
+  i2c-tools
+
+echo "[2/5] Preparing Python virtual environment..."
+if [ ! -d ".venv" ]; then
+  python3 -m venv .venv
+fi
+
+# shellcheck disable=SC1091
+source .venv/bin/activate
+
+echo "[3/5] Upgrading pip toolchain..."
+python -m pip install --upgrade pip setuptools wheel
+
+echo "[4/5] Installing common Python dependencies..."
+python -m pip install \
+  "opencv-python>=4.8.0" \
+  "requests>=2.31.0" \
+  "smbus2>=0.4.3" \
+  "gpiozero>=2.0"
+
+echo "[5/5] Installing MediaPipe..."
+if python -m pip install "mediapipe>=0.10.0"; then
+  echo "MediaPipe installed successfully."
+else
+  echo "Official mediapipe wheel failed. Trying mediapipe-rpi4..."
+  python -m pip install mediapipe-rpi4
+fi
+
+echo "\nDone."
+echo "Activate env: source .venv/bin/activate"
+echo "Run app: python main.py"
