@@ -44,6 +44,41 @@ class Camera:
         if self._using_backend == "opencv":
             self._warmup_opencv()
 
+    def _infer_flat_shape(self, flat_size: int) -> tuple[int, int] | None:
+        if flat_size <= 0 or (flat_size % 3) != 0:
+            return None
+
+        pixels = flat_size // 3
+        candidates: list[tuple[int, int]] = []
+
+        if self.width and self.height:
+            candidates.append((self.width, self.height))
+
+        if self.cap is not None and self._cv2 is not None:
+            try:
+                cap_w = int(self.cap.get(self._cv2.CAP_PROP_FRAME_WIDTH))
+                cap_h = int(self.cap.get(self._cv2.CAP_PROP_FRAME_HEIGHT))
+                if cap_w > 0 and cap_h > 0:
+                    candidates.append((cap_w, cap_h))
+            except Exception:
+                pass
+
+        candidates.extend(
+            [
+                (640, 480),
+                (1280, 720),
+                (1920, 1080),
+                (320, 240),
+                (800, 600),
+            ]
+        )
+
+        for w, h in candidates:
+            if w * h == pixels:
+                return w, h
+
+        return None
+
     @staticmethod
     def _load_cv2():
         try:
@@ -122,9 +157,11 @@ class Camera:
             shape = frame.shape
             if len(shape) == 2 and shape[0] == 1:
                 flat_size = int(shape[1])
-                if self.width and self.height and flat_size == self.width * self.height * 3:
+                inferred = self._infer_flat_shape(flat_size)
+                if inferred is not None:
                     try:
-                        reshaped = frame.reshape((self.height, self.width, 3))
+                        w, h = inferred
+                        reshaped = frame.reshape((h, w, 3))
                         return reshaped[:, :, ::-1]
                     except Exception:
                         return None

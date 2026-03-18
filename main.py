@@ -76,6 +76,13 @@ def run() -> None:
     previous_state = state_machine.state
     read_failures = 0
     logger.info("posture_alarm started")
+    logger.info(
+        "camera backend=%s source=%s size=%sx%s",
+        config.CAMERA_BACKEND,
+        config.CAMERA_SOURCE,
+        config.CAMERA_WIDTH,
+        config.CAMERA_HEIGHT,
+    )
 
     try:
         while True:
