@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import os
 import select
+import signal
 import subprocess
 import time
 from typing import Any, Tuple
@@ -179,8 +180,9 @@ class Camera:
             self._rpicam_proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
                 bufsize=0,
+                start_new_session=(os.name != "nt"),
             )
             self._rpicam_buffer.clear()
             self._using_backend = "rpicam"
@@ -342,16 +344,27 @@ class Camera:
     def release(self) -> None:
         if self.cap is not None:
             self.cap.release()
+            self.cap = None
         if self._picamera2 is not None:
             try:
                 self._picamera2.stop()
             finally:
                 self._picamera2.close()
+                self._picamera2 = None
         if self._rpicam_proc is not None:
             try:
                 if self._rpicam_proc.poll() is None:
-                    self._rpicam_proc.terminate()
-                    self._rpicam_proc.wait(timeout=1.0)
+                    if os.name != "nt":
+                        os.killpg(self._rpicam_proc.pid, signal.SIGTERM)
+                    else:
+                        self._rpicam_proc.terminate()
+                    self._rpicam_proc.wait(timeout=1.5)
             except Exception:
                 if self._rpicam_proc.poll() is None:
-                    self._rpicam_proc.kill()
+                    if os.name != "nt":
+                        os.killpg(self._rpicam_proc.pid, signal.SIGKILL)
+                    else:
+                        self._rpicam_proc.kill()
+            finally:
+                self._rpicam_proc = None
+                self._rpicam_buffer.clear()

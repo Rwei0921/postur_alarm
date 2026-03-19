@@ -33,6 +33,14 @@ Optional environment variables:
 
 For Raspberry Pi Camera Module 3, prefer `CAMERA_BACKEND=rpicam`.
 
+Exit controls:
+- Window mode: `q`, `Q`, or `Esc`
+- Terminal mode: `Ctrl+C`
+
+If camera process appears stuck:
+- `pkill -f "python main.py"`
+- `pkill -f rpicam-vid`
+
 ## Known gaps
 - Fall detection is rule-based and needs real-world threshold tuning.
 - Alert notify path can send repeated messages in sustained `FALLEN` state.

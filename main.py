@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import signal
 import time
 
 import config
@@ -27,6 +28,15 @@ def _load_cv2():
 
 def run() -> None:
     logger = setup_logger()
+    stop_requested = False
+
+    def _request_stop(signum: int, _frame) -> None:
+        nonlocal stop_requested
+        stop_requested = True
+        logger.info("received signal %s, shutting down", signum)
+
+    signal.signal(signal.SIGINT, _request_stop)
+    signal.signal(signal.SIGTERM, _request_stop)
 
     cam = Camera(
         config.CAMERA_SOURCE,
@@ -88,7 +98,7 @@ def run() -> None:
     )
 
     try:
-        while True:
+        while not stop_requested:
             ok, frame = cam.read_frame()
             if not ok:
                 read_failures += 1
@@ -149,10 +159,20 @@ def run() -> None:
 
             if config.SHOW_WINDOW and cv2 is not None:
                 cv2.imshow("posture_alarm", frame)
-                if (cv2.waitKey(1) & 0xFF) == ord("q"):
+                key = cv2.waitKey(1) & 0xFF
+                if key in (ord("q"), ord("Q"), 27):
+                    logger.info("exit requested by keyboard")
+                    stop_requested = True
+                    break
+                if cv2.getWindowProperty("posture_alarm", cv2.WND_PROP_VISIBLE) < 1:
+                    logger.info("exit requested by window close")
+                    stop_requested = True
                     break
 
             time.sleep(0.01)
+
+    except KeyboardInterrupt:
+        logger.info("received keyboard interrupt, shutting down")
 
     finally:
         cam.release()

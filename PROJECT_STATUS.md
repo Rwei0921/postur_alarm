@@ -98,6 +98,7 @@ python main.py
 - 是否能看到狀態字樣與關鍵點
 - 模擬姿態變化時，狀態是否切換
 - FALLEN 時是否觸發蜂鳴/通知/DB 寫入
+- 退出時可用 `q` / `Q` / `Esc`（視窗模式）或 `Ctrl+C`（終端）
 
 ---
 
@@ -121,6 +122,13 @@ python main.py
 - `main.py` 中 FALLEN 狀態下通知可能連續觸發，建議加冷卻機制（cooldown）
 - 硬體端（GPIO/IMU）仍以「模擬可跑」為主，真實寄存器讀值流程可再補強
 - 無攝影機或無 GUI 環境下，需關閉視窗顯示（`SHOW_WINDOW=0`）
+
+### 卡住時快速清理
+
+```bash
+pkill -f "python main.py"
+pkill -f rpicam-vid
+```
 
 ---
 
