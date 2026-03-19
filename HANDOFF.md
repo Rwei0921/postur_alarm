@@ -25,13 +25,13 @@ Last updated: 2026-03-19
 2. Start app: `python main.py`
 
 Optional environment variables:
-- `CAMERA_BACKEND` (`auto` / `picamera2` / `opencv`)
+- `CAMERA_BACKEND` (`auto` / `rpicam` / `picamera2` / `opencv`)
 - `CAMERA_SOURCE`, `SHOW_WINDOW`
 - `SIMULATE_IMU`, `SIMULATE_GPIO`
 - `LINE_NOTIFY_TOKEN`
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 
-For Raspberry Pi Camera Module 3, use `CAMERA_BACKEND=picamera2`.
+For Raspberry Pi Camera Module 3, prefer `CAMERA_BACKEND=rpicam`.
 
 ## Known gaps
 - Fall detection is rule-based and needs real-world threshold tuning.

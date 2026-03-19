@@ -35,6 +35,9 @@ def run() -> None:
         backend=config.CAMERA_BACKEND,
         warmup_frames=config.CAMERA_WARMUP_FRAMES,
         read_retry=config.CAMERA_READ_RETRY,
+        rpicam_fps=config.RPICAM_FPS,
+        rpicam_timeout_ms=config.RPICAM_TIMEOUT_MS,
+        rpicam_buffer_max_bytes=config.RPICAM_BUFFER_MAX_BYTES,
     )
     person_detector = PersonDetector(
         visibility_threshold=config.POSE_VISIBILITY_THRESHOLD,

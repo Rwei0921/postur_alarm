@@ -33,7 +33,7 @@ Camera
 - `structure.txt`：說明已更新為 MediaPipe 人體偵測語意
 
 ### Vision
-- `vision/camera.py`：`Camera` 類別，支援 `picamera2`（Pi Camera Module 3）與 OpenCV
+- `vision/camera.py`：`Camera` 類別，支援 `rpicam` / `picamera2` / OpenCV
 - `vision/person_detector.py`：`PersonDetector`，以關鍵點 visibility 判斷是否有人
 - `vision/pose_estimator.py`：`PoseEstimator`，提取 33 點 landmarks（x/y/z/visibility）
 - `vision/fall_classifier.py`：`FallClassifier`，依軀幹角度/肩髖高差/髖部速度判定
@@ -87,7 +87,7 @@ python main.py
 
 > 若使用 Raspberry Pi Camera Module 3（CSI），建議：
 ```bash
-export CAMERA_BACKEND=picamera2
+export CAMERA_BACKEND=rpicam
 export CAMERA_WIDTH=640
 export CAMERA_HEIGHT=480
 python main.py
@@ -104,7 +104,8 @@ python main.py
 ## 6) 環境變數（可選）
 
 - `CAMERA_SOURCE`（例如 `0`）
-- `CAMERA_BACKEND`（`auto` / `picamera2` / `opencv`）
+- `CAMERA_BACKEND`（`auto` / `rpicam` / `picamera2` / `opencv`）
+- `RPICAM_FPS`、`RPICAM_TIMEOUT_MS`（`rpicam` 後端參數）
 - `SHOW_WINDOW`（`1` or `0`）
 - `LINE_NOTIFY_TOKEN`
 - `TELEGRAM_BOT_TOKEN`

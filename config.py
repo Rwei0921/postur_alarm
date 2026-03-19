@@ -13,6 +13,9 @@ CAMERA_BACKEND = os.getenv("CAMERA_BACKEND", "auto")
 CAMERA_WARMUP_FRAMES = int(os.getenv("CAMERA_WARMUP_FRAMES", "10"))
 CAMERA_READ_RETRY = int(os.getenv("CAMERA_READ_RETRY", "3"))
 CAMERA_MAX_READ_FAILURES = int(os.getenv("CAMERA_MAX_READ_FAILURES", "60"))
+RPICAM_FPS = int(os.getenv("RPICAM_FPS", "15"))
+RPICAM_TIMEOUT_MS = int(os.getenv("RPICAM_TIMEOUT_MS", "800"))
+RPICAM_BUFFER_MAX_BYTES = int(os.getenv("RPICAM_BUFFER_MAX_BYTES", str(4 * 1024 * 1024)))
 SHOW_WINDOW = os.getenv("SHOW_WINDOW", "1") == "1"
 
 # MediaPipe / pose
