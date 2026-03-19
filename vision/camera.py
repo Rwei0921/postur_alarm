@@ -38,6 +38,7 @@ class Camera:
         self._picamera2 = None
         self._rpicam_proc: subprocess.Popen[bytes] | None = None
         self._rpicam_buffer = bytearray()
+        self._rpicam_restarts = 0
         self._using_backend = ""
 
         if self.backend not in {"auto", "opencv", "picamera2", "rpicam"}:
@@ -158,9 +159,12 @@ class Camera:
 
             cmd = [
                 "rpicam-vid",
+                "-t",
+                "0",
                 "--codec",
                 "mjpeg",
                 "--inline",
+                "--flush",
                 "--nopreview",
                 "--width",
                 str(width),
@@ -175,15 +179,28 @@ class Camera:
             self._rpicam_proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
                 bufsize=0,
             )
+            self._rpicam_buffer.clear()
             self._using_backend = "rpicam"
             return True
         except Exception:
             if strict:
                 raise
             return False
+
+    def _restart_rpicam(self) -> bool:
+        if self._rpicam_proc is not None:
+            try:
+                if self._rpicam_proc.poll() is None:
+                    self._rpicam_proc.terminate()
+                    self._rpicam_proc.wait(timeout=0.5)
+            except Exception:
+                pass
+        self._rpicam_proc = None
+        self._rpicam_restarts += 1
+        return self._open_rpicam(strict=False)
 
     def is_opened(self) -> bool:
         if self._using_backend == "picamera2":
@@ -229,6 +246,12 @@ class Camera:
             return b""
 
     def _read_rpicam_frame(self) -> Tuple[bool, Any]:
+        if self._rpicam_proc is None or self._rpicam_proc.poll() is not None:
+            if self._rpicam_restarts < 2 and self._restart_rpicam():
+                pass
+            else:
+                return False, None
+
         if self._rpicam_proc is None or self._rpicam_proc.poll() is not None:
             return False, None
 
