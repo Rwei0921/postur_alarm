@@ -34,7 +34,6 @@ class PostureStateMachine:
         self,
         *,
         fall_detected: bool,
-        impact_detected: bool = False,
         motion_detected: bool = True,
         now: float | None = None,
     ) -> PostureState:
@@ -46,7 +45,7 @@ class PostureStateMachine:
         sedentary_detected = (now_ts - self.last_motion_ts) >= self.sedentary_seconds
 
         if self.state == PostureState.NORMAL:
-            if impact_detected or fall_detected:
+            if fall_detected:
                 self._transition(PostureState.SUSPECT_FALL, now_ts)
             elif sedentary_detected:
                 self._transition(PostureState.SEDENTARY, now_ts)

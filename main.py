@@ -14,7 +14,6 @@ from alert.notifier_discord import DiscordNotifier
 from alert.notifier_line import LineNotifier
 from core.state_machine import PostureState, PostureStateMachine
 from core.utils import build_fall_alert_message, display_timestamp_from_iso, now_timestamp, setup_logger
-from sensors.imu_mpu6050 import IMU_MPU6050
 from storage.db_sqlite import EventDB
 from storage.reporter import Reporter
 from ui.overlay import Overlay
@@ -242,7 +241,6 @@ def run() -> None:
         sedentary_seconds=config.SEDENTARY_SECONDS,
         recovery_seconds=config.FALL_RECOVERY_SECONDS,
     )
-    imu = IMU_MPU6050(simulate=config.SIMULATE_IMU, shock_threshold_g=config.IMU_SHOCK_THRESHOLD_G)
 
     buzzer = BuzzerLED(
         simulate=config.SIMULATE_GPIO,
@@ -356,11 +354,9 @@ def run() -> None:
                     fall_detected = False
 
             motion_detected = hip_speed > 0.02 if person_present else False
-            impact_detected = imu.detect_impact()
 
             state = state_machine.update(
                 fall_detected=fall_detected,
-                impact_detected=impact_detected,
                 motion_detected=motion_detected,
             )
 
@@ -381,7 +377,7 @@ def run() -> None:
                     db.log_event(
                         event_type="fall",
                         state=state.value,
-                        payload={"impact": impact_detected},
+                        payload={"source": "vision"},
                         ts=event_ts,
                     )
                     alert_msg = build_fall_alert_message(display_timestamp_from_iso(event_ts))
@@ -447,7 +443,6 @@ def run() -> None:
         cam.release()
         pose_estimator.close()
         person_detector.close()
-        imu.close()
         buzzer.close()
         db.close()
         if cv2 is not None:

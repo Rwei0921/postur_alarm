@@ -14,7 +14,7 @@ Prefer this file over generic agent habits.
 - Entry point: `main.py`
 - ROI utility: `mark_bed_roi.py`
 - Service template: `posture_alarm.service`
-- Main packages: `alert/`, `core/`, `sensors/`, `storage/`, `ui/`, `vision/`
+- Main packages: `alert/`, `core/`, `storage/`, `ui/`, `vision/`
 - Test directory: `tests/`
 - There is currently no `package.json`, `pyproject.toml`, `tox.ini`, `noxfile.py`, `Makefile`, or CI config in the repo root.
 - There is currently no `.cursorrules`, no `.cursor/rules/`, and no `.github/copilot-instructions.md` in this workspace.
@@ -56,7 +56,7 @@ Prefer this file over generic agent habits.
 Use this after changes that affect module wiring, imports, or optional dependency loading:
 
 ```bash
-python -c "from vision.camera import Camera; from vision.person_detector import PersonDetector; from vision.pose_estimator import PoseEstimator; from vision.fall_classifier import FallClassifier; from core.state_machine import PostureStateMachine; from core.utils import setup_logger; from sensors.imu_mpu6050 import IMU_MPU6050; from alert.buzzer_led import BuzzerLED; from alert.notifier_line import LineNotifier; from alert.notifier_discord import DiscordNotifier; from storage.db_sqlite import EventDB; from storage.reporter import Reporter; from ui.overlay import Overlay; print('All imports OK')"
+python -c "from vision.camera import Camera; from vision.person_detector import PersonDetector; from vision.pose_estimator import PoseEstimator; from vision.fall_classifier import FallClassifier; from core.state_machine import PostureStateMachine; from core.utils import setup_logger; from alert.buzzer_led import BuzzerLED; from alert.notifier_line import LineNotifier; from alert.notifier_discord import DiscordNotifier; from storage.db_sqlite import EventDB; from storage.reporter import Reporter; from ui.overlay import Overlay; print('All imports OK')"
 ```
 
 ## Validation Expectations
@@ -73,7 +73,6 @@ python -c "from vision.camera import Camera; from vision.person_detector import 
 - `config.py`: all environment-driven configuration and repository-wide constants.
 - `vision/`: camera access, person detection, pose estimation, fall classification.
 - `core/`: reusable core logic such as the state machine and logging helpers.
-- `sensors/`: IMU integration and hardware-facing sensor code.
 - `alert/`: buzzer/LED and notifier integrations.
 - `storage/`: SQLite persistence and report generation.
 - `ui/`: OpenCV overlay drawing helpers.

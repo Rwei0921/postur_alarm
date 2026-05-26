@@ -42,7 +42,7 @@ Optional environment variables:
 - `CAMERA_BACKEND` (`auto` / `rpicam` / `picamera2` / `opencv`)
 - `CAMERA_SOURCE`, `SHOW_WINDOW`
 - `APP_TIMEZONE` (default `Asia/Taipei`)
-- `SIMULATE_IMU`, `SIMULATE_GPIO`
+- `SIMULATE_GPIO`
 - `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`
 - `DISCORD_WEBHOOK_URL`
 - `LOG_FILE_ENABLED`, `LOG_FILE_PATH`
@@ -61,10 +61,8 @@ If camera process appears stuck:
 - Fall detection is rule-based and needs real-world threshold tuning.
 - Current threshold tuning is only a first pass; bed-side / reclining edge cases still need real footage validation.
 - Alert cooldown can still suppress retries after a send failure, because cooldown advances on the alert path.
-- Hardware-specific MPU6050 register decode is still a skeleton.
 
 ## Recommended next steps
 1. Validate the new conservative fall thresholds on-device and refine `BED_ROI_*` for the real camera angle.
 2. Add a distinct safe-in-bed state such as `LYING_SAFE` to separate normal bed rest from true falls.
 3. Add integration / long-running tests for notifier delivery, cooldown behavior, and Raspberry Pi runtime stability.
-4. Complete the real MPU6050 register read path if IMU hardware will be used in production.

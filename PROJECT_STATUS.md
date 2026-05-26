@@ -1,6 +1,6 @@
 # posture_alarm 專案實作狀態（MediaPipe 版本）
 
-最後更新：2026-04-09  
+最後更新：2026-05-26  
 目的：讓人與 AI 都能快速理解目前做到哪裡、怎麼跑、接下來做什麼。
 
 ---
@@ -46,9 +46,6 @@ Camera
 - `core/state_machine.py`：`PostureStateMachine`（含時間條件轉換）
 - `core/utils.py`：logger、timestamp 與中文告警訊息格式工具
 
-### Sensors
-- `sensors/imu_mpu6050.py`：`IMU_MPU6050`（模擬模式 + 硬體模式骨架）
-
 ### Alert
 - `alert/buzzer_led.py`：`BuzzerLED`（支援模擬模式）
 - `alert/notifier_line.py`：`LineNotifier`（LINE Messaging API push）
@@ -78,7 +75,7 @@ Camera
 驗證指令：
 
 ```bash
-python -c "from vision.camera import Camera; from vision.person_detector import PersonDetector; from vision.pose_estimator import PoseEstimator; from vision.fall_classifier import FallClassifier; from core.state_machine import PostureStateMachine; from core.utils import setup_logger; from sensors.imu_mpu6050 import IMU_MPU6050; from alert.buzzer_led import BuzzerLED; from alert.notifier_line import LineNotifier; from alert.notifier_discord import DiscordNotifier; from storage.db_sqlite import EventDB; from storage.reporter import Reporter; from ui.overlay import Overlay; print('All imports OK')"
+python -c "from vision.camera import Camera; from vision.person_detector import PersonDetector; from vision.pose_estimator import PoseEstimator; from vision.fall_classifier import FallClassifier; from core.state_machine import PostureStateMachine; from core.utils import setup_logger; from alert.buzzer_led import BuzzerLED; from alert.notifier_line import LineNotifier; from alert.notifier_discord import DiscordNotifier; from storage.db_sqlite import EventDB; from storage.reporter import Reporter; from ui.overlay import Overlay; print('All imports OK')"
 ```
 
 並已新增單元測試目錄，可使用以下指令執行：
@@ -169,7 +166,6 @@ python main.py
 - `DISCORD_WEBHOOK_URL`
 - `LOG_FILE_ENABLED`（預設 1）
 - `LOG_FILE_PATH`（預設 `data/posture_alarm.log`）
-- `SIMULATE_IMU`（預設 1）
 - `SIMULATE_GPIO`（預設 0，使用實體 GPIO；設為 1 可改回模擬）
 - `BUZZER_PWM_ENABLED`（預設 1，兩腳被動蜂鳴器使用 PWM）
 - `BUZZER_PWM_FREQUENCY`（預設 2000）
@@ -184,7 +180,7 @@ python main.py
 - LINE 已改為 Messaging API，Discord 已改為 webhook；仍需用正式 token / webhook 在樹莓派實機驗證送達穩定度
 - SQLite 已接到主流程，事件會自動寫入 `data/events.db`，但舊資料若是 UTC 格式不會自動轉換
 - 日誌、DB 與告警訊息已統一走 `APP_TIMEZONE`；目前通知顯示為中文時間格式
-- 硬體端（GPIO/IMU）仍以「模擬可跑」為主，真實寄存器讀值流程可再補強
+- 硬體端 GPIO 仍需依實際樹莓派與蜂鳴器/LED 接線驗證
 - 無攝影機或無 GUI 環境下，需關閉視窗顯示（`SHOW_WINDOW=0`）
 
 > 進度更新：SQLite、LINE/Discord、時間一致性與第一輪跌倒保守化調參已完成，後續重點為實地調參與資料累積。
@@ -238,8 +234,8 @@ pkill -f rpicam-vid
 | 功能 | 狀態 | 說明 |
 |------|------|------|
 | **純 MediaPipe 架構** | ✅ 已完成 | 已移除 YOLO，全面使用 MediaPipe Pose |
-| **核心模組**（Vision / Core / Sensors / Alert / Storage / UI） | ✅ 已完成 | 共 14 個模組檔案，匯入驗證通過 |
-| **主迴圈整合** (`main.py`) | ✅ 已完成 | 425 行，含 BED ROI 互動標記、縮放顯示 |
+| **核心模組**（Vision / Core / Alert / Storage / UI） | ✅ 已完成 | 匯入驗證通過 |
+| **主迴圈整合** (`main.py`) | ✅ 已完成 | 含 BED ROI 互動標記、縮放顯示 |
 | **通知冷卻機制** (`ALERT_COOLDOWN_SECONDS`) | ✅ 已完成 | 預設 60 秒冷卻，避免 FALLEN 連續推播 |
 | **多幀平滑分數制** (`FallClassifier`) | ✅ 已完成 | `deque` 環形緩衝區 + `score_threshold` |
 | **跌倒事件閘控** (`FALL_EVENT_*`) | ✅ 已完成 | 髖部下降量 + 事件時間窗，抑制慢躺誤報 |
@@ -254,7 +250,6 @@ pkill -f rpicam-vid
 | **實地調參與資料累積** | 🔶 待進行 | 需在樹莓派實際場域測試調整閾值 |
 | **`LYING_SAFE` 狀態分流** | ⬜ 未開始 | 計畫將病床正常躺臥獨立為安全狀態 |
 | **整合測試** | ⬜ 未開始 | 端到端長時間運行穩定性測試 |
-| **硬體 IMU 寄存器讀值** | ⬜ 未開始 | `_read_hardware()` 仍為骨架 |
 
 ---
 

@@ -64,10 +64,6 @@ FALL_CONFIRM_SECONDS = float(os.getenv("FALL_CONFIRM_SECONDS", "1.2"))
 SEDENTARY_SECONDS = float(os.getenv("SEDENTARY_SECONDS", "1800"))
 FALL_RECOVERY_SECONDS = float(os.getenv("FALL_RECOVERY_SECONDS", "5.0"))
 
-# Sensors
-SIMULATE_IMU = os.getenv("SIMULATE_IMU", "1") == "1"
-IMU_SHOCK_THRESHOLD_G = float(os.getenv("IMU_SHOCK_THRESHOLD_G", "1.8"))
-
 # Alert
 SIMULATE_GPIO = os.getenv("SIMULATE_GPIO", "0") == "1"
 BUZZER_PWM_ENABLED = os.getenv("BUZZER_PWM_ENABLED", "1") == "1"

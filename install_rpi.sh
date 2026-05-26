@@ -28,7 +28,6 @@ $SUDO apt-get install -y \
   libgtk-3-dev \
   libglib2.0-0 \
   libgl1 \
-  i2c-tools \
   v4l-utils \
   rpicam-apps \
   python3-lgpio \
@@ -49,7 +48,6 @@ python -m pip install --upgrade pip setuptools wheel
 echo "[4/5] Installing common Python dependencies..."
 python -m pip install \
   "requests>=2.31.0" \
-  "smbus2>=0.4.3" \
   "gpiozero>=2.0"
 
 echo "[5/5] Installing MediaPipe..."
