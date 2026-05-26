@@ -73,6 +73,28 @@ Buzzer / LED / LINE / Discord / SQLite / Overlay
 
 ---
 
+# 完整系統流程圖
+
+```text
+攝影機
+  ↓
+OpenCV / Raspberry Pi Camera 讀取影像
+  ↓
+MediaPipe Pose 偵測 33 個人體關鍵點
+  ↓
+關鍵點可信度檢查
+  ↓
+姿態特徵計算：軀幹角度 / 肩髖高差 / 髖部速度 / 床區 ROI
+  ↓
+跌倒分類：正常 / 疑似跌倒 / 安全躺臥
+  ↓
+狀態機：NORMAL / SUSPECT_FALL / FALLEN / SEDENTARY / LYING_SAFE
+  ↓
+輸出：蜂鳴器 / LED / LINE / Discord / SQLite / Overlay
+```
+
+---
+
 # 已完成：軟體架構
 
 | 模組 | 目前進度 |
@@ -130,6 +152,48 @@ Buzzer / LED / LINE / Discord / SQLite / Overlay
 - 跌倒事件時間窗
 
 目前已完成第一輪保守化調參，用來降低「慢慢躺下」或「床上抬頭」造成的誤報。
+
+---
+
+# 跌倒判斷公式化
+
+目前跌倒判斷可整理成以下規則，方便說明與報告呈現：
+
+```text
+fall_posture = trunk_angle >= angle_threshold
+            and hip_shoulder_diff <= hip_shoulder_diff_threshold
+
+fall_event = hip_speed >= speed_threshold
+          or hip_drop >= min_hip_drop
+
+fall_score = 最近 N 幀中 fall_event 或 fall_posture 的比例
+
+if fall_score >= score_threshold:
+    fall_detected = True
+```
+
+床區補充規則：若人在 BED ROI 內、沒有明確跌倒事件，則分流為 `LYING_SAFE`，不直接觸發跌倒警報。
+
+---
+
+# 關鍵點可信度判斷
+
+MediaPipe 每個 landmark 都有 `visibility`，目前系統會用它判斷人體偵測是否可靠。
+
+重要關鍵點包含：鼻子、左右肩、左右髖、左右膝、左右腳踝。
+
+```text
+if 可見關鍵點數量 < MIN_VISIBLE_KEYPOINTS:
+    判定為無有效人體
+
+if 重要關鍵點平均 visibility < POSE_VISIBILITY_THRESHOLD:
+    判定為無有效人體
+
+else:
+    進入姿態與跌倒分析
+```
+
+這可以降低遮擋、光線不足、鏡頭角度不佳造成的誤報。
 
 ---
 
@@ -233,6 +297,23 @@ python -m pytest tests -q
 
 ---
 
+# 實測結果表格
+
+以下表格可在實際 Demo 或場域測試後填入數據。
+
+| 測試情境 | 測試次數 | 成功偵測 | 誤報 | 備註 |
+|---|---:|---:|---:|---|
+| 正常站立 | 10 | 待填 | 待填 | 驗證 NORMAL |
+| 正常坐下 | 10 | 待填 | 待填 | 驗證不誤報 |
+| 躺在床上 | 10 | 待填 | 待填 | 驗證 BED ROI / LYING_SAFE |
+| 模擬跌倒 | 10 | 待填 | 待填 | 驗證 FALLEN |
+| 翻身 | 10 | 待填 | 待填 | 驗證不誤判跌倒 |
+| 彎腰撿東西 | 10 | 待填 | 待填 | 驗證瞬間動作不誤報 |
+| 短暫遮擋 | 10 | 待填 | 待填 | 驗證 visibility 判斷 |
+| 長時間不動 | 10 | 待填 | 待填 | 驗證 SEDENTARY |
+
+---
+
 # 目前可以展示的功能
 
 目前展示時可以呈現：
@@ -245,6 +326,21 @@ python -m pytest tests -q
 6. 模擬跌倒後的蜂鳴器、LED、LINE、Discord 通知
 7. SQLite 事件紀錄
 8. pytest 測試結果
+
+---
+
+# Demo 截圖預留頁
+
+建議匯出 PPT 後，把以下畫面截圖補到此頁或拆成多頁：
+
+| 截圖位置 | 要證明的內容 |
+|---|---|
+| MediaPipe 骨架畫面 | 已成功偵測人體關鍵點 |
+| NORMAL / LYING_SAFE 畫面 | 正常與安全躺臥狀態可區分 |
+| FALLEN 警報畫面 | 跌倒時畫面顯示警告 |
+| LINE / Discord 通知 | 遠端通知已送出 |
+| SQLite / CSV 紀錄 | 系統有留下事件資料 |
+| 蜂鳴器、LED、3D 外殼照片 | 硬體警報與實體裝置已完成 |
 
 ---
 

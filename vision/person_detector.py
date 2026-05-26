@@ -6,6 +6,9 @@ import importlib
 from typing import Any
 
 
+IMPORTANT_KEYPOINT_INDICES = (0, 11, 12, 23, 24, 25, 26, 27, 28)
+
+
 class PersonDetector:
     def __init__(
         self,
@@ -41,7 +44,21 @@ class PersonDetector:
 
     def has_person(self, landmarks: list[dict[str, float]]) -> bool:
         visible = sum(1 for lm in landmarks if lm.get("visibility", 0.0) >= self.visibility_threshold)
-        return visible >= self.min_visible_keypoints
+        if visible < self.min_visible_keypoints:
+            return False
+
+        return self._important_visibility_score(landmarks) >= self.visibility_threshold
+
+    @staticmethod
+    def _important_visibility_score(landmarks: list[dict[str, float]]) -> float:
+        values = [
+            landmarks[idx].get("visibility", 0.0)
+            for idx in IMPORTANT_KEYPOINT_INDICES
+            if idx < len(landmarks)
+        ]
+        if not values:
+            return 0.0
+        return float(sum(values) / len(values))
 
     def detect(self, frame_bgr: Any) -> bool:
         landmarks = self.detect_with_landmarks(frame_bgr)
