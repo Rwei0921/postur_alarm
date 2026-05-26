@@ -39,3 +39,40 @@ def test_sedentary_detect_and_recover():
     assert sm.update(fall_detected=False, motion_detected=True, now=t0) == PostureState.NORMAL
     assert sm.update(fall_detected=False, motion_detected=False, now=t0 + 2.1) == PostureState.SEDENTARY
     assert sm.update(fall_detected=False, motion_detected=True, now=t0 + 2.2) == PostureState.NORMAL
+
+
+def test_safe_lying_detect_and_recover():
+    sm = PostureStateMachine(suspect_timeout=1.0, fall_confirm_seconds=0.5, sedentary_seconds=100.0)
+    t0 = 50.0
+
+    assert sm.update(
+        fall_detected=False,
+        motion_detected=False,
+        safe_lying_detected=True,
+        now=t0,
+    ) == PostureState.LYING_SAFE
+    assert sm.update(
+        fall_detected=False,
+        motion_detected=True,
+        safe_lying_detected=False,
+        now=t0 + 1.0,
+    ) == PostureState.NORMAL
+
+
+def test_safe_lying_to_suspect_fall_when_fall_detected():
+    sm = PostureStateMachine(suspect_timeout=1.0, fall_confirm_seconds=0.5, sedentary_seconds=100.0)
+    t0 = 60.0
+
+    assert sm.update(
+        fall_detected=False,
+        motion_detected=False,
+        safe_lying_detected=True,
+        now=t0,
+    ) == PostureState.LYING_SAFE
+    assert sm.update(
+        fall_detected=True,
+        motion_detected=False,
+        safe_lying_detected=True,
+        now=t0 + 0.5,
+    ) == PostureState.SUSPECT_FALL
+

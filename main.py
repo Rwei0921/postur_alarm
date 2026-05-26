@@ -344,13 +344,16 @@ def run() -> None:
 
             fall_detected = False
             hip_speed = 0.0
+            safe_lying_detected = False
             if person_present:
                 fall_detected, features = fall_classifier.classify(landmarks)
                 hip_speed = features.hip_speed
-                if fall_detected and _in_bed_roi((
+                in_bed_roi = _in_bed_roi((
                     (landmarks[23]["x"] + landmarks[24]["x"]) / 2.0,
                     features.hip_center_y,
-                )) and not features.has_fall_event:
+                ))
+                safe_lying_detected = fall_detected and in_bed_roi and not features.has_fall_event
+                if fall_detected and safe_lying_detected:
                     fall_detected = False
 
             motion_detected = hip_speed > 0.02 if person_present else False
@@ -358,6 +361,7 @@ def run() -> None:
             state = state_machine.update(
                 fall_detected=fall_detected,
                 motion_detected=motion_detected,
+                safe_lying_detected=safe_lying_detected,
             )
 
             if state != previous_state:

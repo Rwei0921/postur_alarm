@@ -11,6 +11,7 @@ class PostureState(str, Enum):
     SUSPECT_FALL = "SUSPECT_FALL"
     FALLEN = "FALLEN"
     SEDENTARY = "SEDENTARY"
+    LYING_SAFE = "LYING_SAFE"
 
 
 class PostureStateMachine:
@@ -35,9 +36,13 @@ class PostureStateMachine:
         *,
         fall_detected: bool,
         motion_detected: bool = True,
+        safe_lying_detected: bool = False,
         now: float | None = None,
     ) -> PostureState:
         now_ts = now if now is not None else time.monotonic()
+
+        if fall_detected:
+            safe_lying_detected = False
 
         if motion_detected:
             self.last_motion_ts = now_ts
@@ -47,6 +52,8 @@ class PostureStateMachine:
         if self.state == PostureState.NORMAL:
             if fall_detected:
                 self._transition(PostureState.SUSPECT_FALL, now_ts)
+            elif safe_lying_detected:
+                self._transition(PostureState.LYING_SAFE, now_ts)
             elif sedentary_detected:
                 self._transition(PostureState.SEDENTARY, now_ts)
             return self.state
@@ -67,6 +74,13 @@ class PostureStateMachine:
 
         if self.state == PostureState.SEDENTARY:
             if not sedentary_detected:
+                self._transition(PostureState.NORMAL, now_ts)
+            return self.state
+
+        if self.state == PostureState.LYING_SAFE:
+            if fall_detected:
+                self._transition(PostureState.SUSPECT_FALL, now_ts)
+            elif not safe_lying_detected:
                 self._transition(PostureState.NORMAL, now_ts)
             return self.state
 

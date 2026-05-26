@@ -13,6 +13,7 @@ Last updated: 2026-04-09
 - Connected SQLite fully so DB file/schema bootstrap automatically and `Reporter` reads the same DB.
 - Unified log / DB / alert timestamps with `APP_TIMEZONE` and changed outbound alert text to Chinese time format.
 - Applied a first-pass conservative tuning of fall thresholds to reduce bed/reclining head-lift false positives.
+- Added `LYING_SAFE` state to separate safe bed lying from true fall alerts.
 - Added test suite (`tests/`) for state machine, classifier, DB, notifier, config, and utils.
 - Added deployment/unit files (`posture_alarm.service`) and tuning guide (`TUNING_GUIDE.md`).
 
@@ -64,5 +65,4 @@ If camera process appears stuck:
 
 ## Recommended next steps
 1. Validate the new conservative fall thresholds on-device and refine `BED_ROI_*` for the real camera angle.
-2. Add a distinct safe-in-bed state such as `LYING_SAFE` to separate normal bed rest from true falls.
-3. Add integration / long-running tests for notifier delivery, cooldown behavior, and Raspberry Pi runtime stability.
+2. Add integration / long-running tests for notifier delivery, cooldown behavior, and Raspberry Pi runtime stability.

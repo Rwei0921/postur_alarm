@@ -52,7 +52,7 @@ D:\posture_alarm/
 | `run` | function | `main.py` | Main loop, signal handling, module wiring, alert fanout. |
 | `_interactive_mark_bed_roi` | function | `main.py` | 4-point polygon ROI marking at startup/manual `m`. |
 | `_in_bed_roi` | function | `main.py` | Suppresses fall posture inside bed ROI unless fall event exists. |
-| `PostureState` | enum | `core/state_machine.py` | `NORMAL`, `SUSPECT_FALL`, `FALLEN`, `SEDENTARY`. |
+| `PostureState` | enum | `core/state_machine.py` | `NORMAL`, `SUSPECT_FALL`, `FALLEN`, `SEDENTARY`, `LYING_SAFE`. |
 | `PostureStateMachine` | class | `core/state_machine.py` | Time-based transition rules with injectable `now`. |
 | `FallFeatures` | dataclass | `vision/fall_classifier.py` | Classifier diagnostics returned with decisions. |
 | `FallClassifier` | class | `vision/fall_classifier.py` | Trunk angle, hip drop/speed, event window, smoothing score. |
