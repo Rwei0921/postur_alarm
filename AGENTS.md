@@ -1,176 +1,140 @@
-# AGENTS.md
+# PROJECT KNOWLEDGE BASE
 
-## Purpose
+**Generated:** 2026-05-26
+**Commit:** 9258dff
+**Branch:** master
 
-This file is a repository-specific execution guide for coding agents working in `D:\posture_alarm`.
-It documents the commands, validation flow, and coding conventions that are actually present in this repo.
-Prefer this file over generic agent habits.
+## OVERVIEW
 
-## Repository Snapshot
+Raspberry Pi posture alarm demo in Python. Camera frames go through MediaPipe Pose, rule-based fall classification, state transitions, GPIO buzzer/LED, LINE/Discord notifications, SQLite logging, CSV reporting, and OpenCV overlays.
 
-- Language: Python
-- Test runner: `pytest`
-- Dependency source: `requirements.txt`
-- Entry point: `main.py`
-- ROI utility: `mark_bed_roi.py`
-- Service template: `posture_alarm.service`
-- Main packages: `alert/`, `core/`, `storage/`, `ui/`, `vision/`
-- Test directory: `tests/`
-- There is currently no `package.json`, `pyproject.toml`, `tox.ini`, `noxfile.py`, `Makefile`, or CI config in the repo root.
-- There is currently no `.cursorrules`, no `.cursor/rules/`, and no `.github/copilot-instructions.md` in this workspace.
+## STRUCTURE
 
-## Working Directory
+```text
+D:\posture_alarm/
+├── main.py                 # Runtime wiring and event loop
+├── config.py               # Environment-driven constants only
+├── mark_bed_roi.py         # Standalone rectangular bed ROI marker
+├── setup_demo.py           # Interactive creator for demo.env
+├── run_demo.sh             # Loads demo.env then runs main.py
+├── install_rpi.sh          # Raspberry Pi setup helper
+├── posture_alarm.service   # systemd service template
+├── posture_alarm.env.example
+├── alert/                  # GPIO + outbound notifier boundaries
+├── core/                   # State machine, timestamps, logging helpers
+├── storage/                # SQLite event DB and daily CSV reports
+├── ui/                     # OpenCV overlay drawing only
+├── vision/                 # Camera, MediaPipe, fall classifier pipeline
+├── tests/                  # Hardware-free pytest suite
+└── .github/agents/accuracy.agent.md
+```
 
-- Run commands from the repository root: `D:\posture_alarm`
-- Use workspace-relative imports and paths that already exist in the codebase.
+## WHERE TO LOOK
 
-## Install Commands
+| Task | Location | Notes |
+|------|----------|-------|
+| Runtime orchestration | `main.py` | Instantiates every boundary class; pass config values here. |
+| Environment defaults | `config.py` | Keep all `os.getenv()` parsing centralized here. |
+| Fall tuning | `vision/fall_classifier.py`, `core/state_machine.py`, `TUNING_GUIDE.md` | Also read `.github/agents/accuracy.agent.md`. |
+| Camera access | `vision/camera.py` | Supports OpenCV and Raspberry Pi camera paths. |
+| MediaPipe pose | `vision/pose_estimator.py`, `vision/person_detector.py` | Optional dependency boundary. |
+| GPIO alarm | `alert/buzzer_led.py`, `test_bz_led.py`, `test_bz_long.py` | BCM pins: buzzer GPIO 17, LED GPIO 27. |
+| LINE/Discord | `alert/notifier_line.py`, `alert/notifier_discord.py`, `test_notify.py` | Return `False` on missing config or request failures. |
+| Persistence | `storage/db_sqlite.py`, `storage/reporter.py` | Events table is created lazily; payloads are JSON strings. |
+| Overlay changes | `ui/overlay.py` | Draw helpers load `cv2` lazily. |
+| Demo setup | `setup_demo.py`, `demo.env`, `run_demo.sh` | `demo.env` can contain secrets; do not commit it. |
+| Unit tests | `tests/` | Deterministic, no real camera/GPIO/GUI/network. |
 
-- Install dependencies: `pip install -r requirements.txt`
-- Recommended test install path is the same command above; `pytest` is already listed in `requirements.txt`.
+## CODE MAP
 
-## Run Commands
+| Symbol | Type | Location | Role |
+|--------|------|----------|------|
+| `run` | function | `main.py` | Main loop, signal handling, module wiring, alert fanout. |
+| `_interactive_mark_bed_roi` | function | `main.py` | 4-point polygon ROI marking at startup/manual `m`. |
+| `_in_bed_roi` | function | `main.py` | Suppresses fall posture inside bed ROI unless fall event exists. |
+| `PostureState` | enum | `core/state_machine.py` | `NORMAL`, `SUSPECT_FALL`, `FALLEN`, `SEDENTARY`. |
+| `PostureStateMachine` | class | `core/state_machine.py` | Time-based transition rules with injectable `now`. |
+| `FallFeatures` | dataclass | `vision/fall_classifier.py` | Classifier diagnostics returned with decisions. |
+| `FallClassifier` | class | `vision/fall_classifier.py` | Trunk angle, hip drop/speed, event window, smoothing score. |
+| `Camera` | class | `vision/camera.py` | Runtime camera abstraction. |
+| `PersonDetector` | class | `vision/person_detector.py` | Landmark visibility/person-present gate. |
+| `PoseEstimator` | class | `vision/pose_estimator.py` | MediaPipe landmark extraction. |
+| `BuzzerLED` | class | `alert/buzzer_led.py` | Fail-soft GPIO output; simulation fallback. |
+| `LineNotifier` | class | `alert/notifier_line.py` | LINE Messaging API push integration. |
+| `DiscordNotifier` | class | `alert/notifier_discord.py` | Discord webhook integration. |
+| `EventDB` | class | `storage/db_sqlite.py` | SQLite event insertion and recent fetches. |
+| `Reporter` | class | `storage/reporter.py` | Daily CSV export from event DB. |
+| `Overlay` | class | `ui/overlay.py` | Status, alert, landmarks, bed ROI rendering. |
 
-- Start the main app: `python main.py`
-- Open the bed ROI marker: `python mark_bed_roi.py`
-- Mark ROI and then launch main app: `python mark_bed_roi.py --run-main`
+## CONVENTIONS
 
-## Test Commands
+- Use `from __future__ import annotations` in Python modules.
+- Imports are standard library, third-party, local packages; keep local imports absolute from repo root.
+- Use double quotes, 4-space indentation, short module docstrings, sparse comments.
+- Public functions/methods and important locals should be typed when clear.
+- Use `dataclass` for small result containers and `Enum` for finite state sets.
+- Keep dynamic library boundaries lazy: `cv2`, `numpy`, `picamera2`, `requests`, and GPIO imports should stay inside boundary helpers where practical.
+- Keep config values in `config.py`; pass them into constructors from `main.py`.
+- Hardware, network, camera, and GUI failures should fail soft at the boundary when the app can keep running.
+- Core logic should not silently swallow actionable exceptions.
+- SQLite event payloads must remain JSON-serializable; preserve existing schema unless migration is explicitly requested.
 
-- Run the full test suite: `python -m pytest tests -q`
-- Run with verbose names: `python -m pytest tests -v`
-- Run one test file: `python -m pytest tests/test_state_machine.py -q`
-- Run one test case by node id: `python -m pytest tests/test_state_machine.py::test_suspect_timeout_back_to_normal -q`
-- Filter tests by substring: `python -m pytest tests -k sedentary -q`
+## ANTI-PATTERNS (THIS PROJECT)
 
-## Build / Lint / Typecheck Status
+- Do not add dependencies casually; `requirements.txt` is intentionally small.
+- Do not move environment parsing out of `config.py`.
+- Do not replace the rule-based fall pipeline with a new architecture unless requested.
+- Do not rename top-level modules or public classes without updating all imports.
+- Do not make tests require a real camera, GPIO, OpenCV GUI, LINE, Discord, or network access.
+- Do not modify test assertions without a clear correctness reason; tests document behavior.
+- Do not skip the import-health check after wiring, config-loading, or optional-import changes.
+- Do not commit `demo.env`; it can contain LINE tokens and Discord webhooks.
 
-- There is no dedicated build command in this repository.
-- There is no configured linter command such as `ruff`, `flake8`, `pylint`, or `black`.
-- There is no configured typecheck command such as `mypy` or `pyright`.
-- Do not invent new mandatory tooling in routine edits unless the user explicitly asks for it.
-- For small changes, use targeted tests plus the import-health check below as the closest equivalent to a build smoke test.
+## UNIQUE STYLES
 
-## Import-Health Check
+- Simulation-friendly defaults matter: code should run in non-Raspberry-Pi environments where possible.
+- State-machine tests inject timestamps instead of sleeping.
+- Classifier tests construct synthetic landmark lists and assert feature values, not just booleans.
+- Notifier tests monkeypatch `_load_requests`; keep that seam available.
+- SQLite tests use `:memory:` or `tmp_path`; storage code creates parent directories itself.
+- Alert messages and display timestamps use Taiwan local formatting through `core.utils`.
+- `main.py` supports both rectangle and 4-point polygon bed ROI; rectangle values remain for backward compatibility.
 
-Use this after changes that affect module wiring, imports, or optional dependency loading:
+## COMMANDS
+
+```bash
+pip install -r requirements.txt
+python main.py
+python mark_bed_roi.py
+python mark_bed_roi.py --run-main
+python setup_demo.py
+python -m pytest tests -q
+python -m pytest tests/test_state_machine.py -q
+python -m pytest tests -k sedentary -q
+python test_bz_led.py --simulate --pwm-buzzer
+python test_notify.py
+```
+
+Import-health check after wiring/import changes:
 
 ```bash
 python -c "from vision.camera import Camera; from vision.person_detector import PersonDetector; from vision.pose_estimator import PoseEstimator; from vision.fall_classifier import FallClassifier; from core.state_machine import PostureStateMachine; from core.utils import setup_logger; from alert.buzzer_led import BuzzerLED; from alert.notifier_line import LineNotifier; from alert.notifier_discord import DiscordNotifier; from storage.db_sqlite import EventDB; from storage.reporter import Reporter; from ui.overlay import Overlay; print('All imports OK')"
 ```
 
-## Validation Expectations
+## VALIDATION DEFAULTS
 
-- For a small logic change, run the most specific impacted test file first.
-- For a single behavior within a file, prefer a single test node id before rerunning the whole file.
-- For changes touching shared logic or cross-module imports, run `python -m pytest tests -q`.
-- For changes affecting wiring, startup, or optional imports, also run the import-health check.
-- If a command cannot run because of missing hardware, GUI, or platform dependencies, say so explicitly in your handoff.
+- Small logic change: run the narrowest relevant test first.
+- Shared core/config/vision changes: run `python -m pytest tests -q`.
+- Wiring or optional import changes: run the import-health check too.
+- Hardware scripts may need Raspberry Pi GPIO permissions or `python3-lgpio`; report blockers instead of guessing.
+- There is no configured linter, formatter, typechecker, build system, Makefile, tox/nox, pyproject, or CI workflow in this repo.
 
-## Architecture Map
+## LOCATION DECISION
 
-- `main.py`: main orchestration loop, signal handling, ROI marking, module wiring.
-- `config.py`: all environment-driven configuration and repository-wide constants.
-- `vision/`: camera access, person detection, pose estimation, fall classification.
-- `core/`: reusable core logic such as the state machine and logging helpers.
-- `alert/`: buzzer/LED and notifier integrations.
-- `storage/`: SQLite persistence and report generation.
-- `ui/`: OpenCV overlay drawing helpers.
-- `tests/`: deterministic unit tests for state machine, fall classifier, and SQLite storage.
+Only this root file is warranted now. Source counts are small (`vision/` 5 code files, `tests/` 7, `alert/` 4, `core/` 3, `storage/` 3, `ui/` 2), and no subdirectory has local config or enough unique rules to justify a child `AGENTS.md` without repeating parent guidance.
 
-## Code Style Guidelines
+## NOTES
 
-### Imports
-
-- Use `from __future__ import annotations` at the top of Python modules, matching the existing codebase.
-- Group imports in this order: standard library, third-party, then local package imports.
-- Prefer absolute imports from repo packages like `from core.state_machine import PostureStateMachine`.
-- Keep import lists explicit; avoid wildcard imports.
-- For optional runtime dependencies such as `cv2`, `numpy`, `picamera2`, or `requests`, follow the existing lazy-import pattern inside helper methods when appropriate.
-
-### Formatting
-
-- Use 4-space indentation.
-- Use double quotes consistently.
-- Keep module docstrings short and descriptive.
-- Break long constructor calls and conditionals across multiple lines with trailing commas.
-- Prefer readable multi-line boolean expressions over compressed one-liners.
-- Keep comments sparse; add them only when they explain a non-obvious compatibility or runtime detail.
-
-### Types
-
-- Add type annotations to public functions, methods, and important locals when it improves clarity.
-- Prefer built-in generic syntax like `list[dict[str, float]]`, `tuple[float, float]`, and `dict[str, Any]`.
-- Use `dataclass` for small structured result containers when the code already models data that way.
-- Use `Enum` subclasses for finite state sets, matching `PostureState`.
-- Use `Any` only at dynamic library boundaries or image/frame interfaces where concrete types are impractical.
-- Do not introduce `Any` where the repo already has a simple precise type.
-
-### Naming
-
-- Modules and functions use `snake_case`.
-- Classes use `PascalCase`.
-- Constants use `UPPER_SNAKE_CASE`, especially in `config.py`.
-- Internal helper functions may be prefixed with `_`.
-- Tests use `test_...` names that describe the behavioral path being asserted.
-- State values are uppercase strings such as `NORMAL`, `SUSPECT_FALL`, `FALLEN`, and `SEDENTARY`.
-
-### Control Flow and Design
-
-- Keep configuration parsing centralized in `config.py`; do not scatter new `os.getenv()` calls across unrelated modules.
-- Pass config values into class constructors from `main.py` rather than hardcoding thresholds deep in feature code.
-- Keep hardware, network, and GUI boundaries isolated behind small classes such as `Camera`, notifier classes, and `Overlay`.
-- Prefer small helper methods for calculations, as seen in `FallClassifier` and `Camera`.
-- Preserve simulation-friendly defaults; this repo is designed to run without requiring all hardware to be present.
-
-### Error Handling
-
-- Follow the repository's fail-soft approach at optional integration boundaries.
-- For optional notifiers or unavailable backends, returning `False` is an established pattern.
-- For required dynamic dependencies, raise a clear `RuntimeError` and chain the original exception with `from exc`.
-- Do not swallow exceptions silently in core logic where a failure should be actionable.
-- When broad `except Exception` is necessary at I/O or hardware boundaries, keep the protected block small.
-
-### Logging
-
-- Reuse `core.utils.setup_logger()` for console logging behavior.
-- Prefer structured logger calls with format placeholders rather than string concatenation.
-- Keep startup, shutdown, and operator-facing events loggable from the orchestration layer.
-
-### Data and Persistence
-
-- Keep event payloads JSON-serializable.
-- Preserve SQLite schema compatibility unless the task explicitly includes a migration.
-- Create parent directories with `Path(...).parent.mkdir(parents=True, exist_ok=True)` when introducing new local storage files.
-
-### Tests
-
-- Keep tests deterministic and hardware-free.
-- Prefer injected timestamps over `sleep()` when testing state transitions or classifier windows.
-- Use `:memory:` SQLite databases in tests when persistence behavior is the only concern.
-- Add or update the narrowest relevant tests when changing logic in `core/`, `vision/`, or `storage/`.
-
-## Change Boundaries
-
-- Do not rename top-level modules or public classes unless the task requires it and all imports are updated.
-- Do not add new dependencies casually; this repo is intentionally lightweight.
-- Do not make tests depend on a real camera, GPIO, GUI, or network service.
-- Do not move environment-variable parsing out of `config.py`.
-- Do not replace the existing rule-based fall pipeline with a different architecture unless explicitly requested.
-
-## Agent Reporting Expectations
-
-When you finish a change, report:
-
-- which files changed,
-- which validation commands you ran,
-- which validation commands you could not run,
-- and any hardware/platform caveats that still matter.
-
-## Practical Defaults For Agents
-
-- Read `config.py`, the directly affected module, and the matching test file before editing.
-- Match existing local patterns before introducing new abstractions.
-- Prefer minimal diffs for bug fixes.
-- If no lint or typecheck tool exists, do not claim linting or type safety was verified.
-- If a requested validation is impossible in the current environment, state the exact blocker instead of guessing.
+- Current workspace includes a `.venv/`; exclude it from repository analysis.
+- `rg` was unavailable in the current Windows environment during generation; use PowerShell/search fallback if needed.
+- The working tree was already dirty when this file was regenerated; avoid reverting unrelated changes.
