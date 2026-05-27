@@ -4,7 +4,7 @@ theme: default
 paginate: true
 size: 16:9
 title: posture_alarm 期末進度報告
-description: Raspberry Pi 姿態跌倒警報系統目前進度報告
+description: Raspberry Pi 姿態警報系統目前進度報告
 style: |
   section {
     font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
@@ -18,7 +18,7 @@ style: |
 
 <!-- _class: lead -->
 
-# Raspberry Pi 姿態跌倒警報系統
+# Raspberry Pi 姿態警報系統
 
 ## 期末進度報告
 
