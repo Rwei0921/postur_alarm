@@ -6,7 +6,7 @@ import importlib
 import os
 import signal
 import time
-from typing import Any
+from typing import Any, Protocol
 
 import config
 from alert.buzzer_led import BuzzerLED
@@ -72,6 +72,35 @@ def _point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, flo
             inside = not inside
         j = i
     return inside
+
+
+class _MessageSender(Protocol):
+    def send(self, message: str) -> bool:
+        ...
+
+
+def _send_fall_alert(
+    db: EventDB,
+    line: _MessageSender,
+    discord: _MessageSender,
+    logger,
+) -> bool:
+    event_ts = now_timestamp()
+    db.log_event(
+        event_type="fall",
+        state=PostureState.FALLEN.value,
+        payload={"source": "vision"},
+        ts=event_ts,
+    )
+    alert_msg = build_fall_alert_message(display_timestamp_from_iso(event_ts))
+    line_sent = line.send(alert_msg)
+    discord_sent = discord.send(alert_msg)
+    logger.info(
+        "fall alert sent: line=%s discord=%s",
+        line_sent,
+        discord_sent,
+    )
+    return line_sent or discord_sent
 
 
 def _interactive_mark_bed_roi(cam: Camera, cv2, scale: float, logger) -> None:
@@ -377,22 +406,8 @@ def run() -> None:
                 buzzer.alert_on()
                 now_ts = time.monotonic()
                 if (now_ts - last_alert_ts) >= config.ALERT_COOLDOWN_SECONDS:
-                    event_ts = now_timestamp()
-                    db.log_event(
-                        event_type="fall",
-                        state=state.value,
-                        payload={"source": "vision"},
-                        ts=event_ts,
-                    )
-                    alert_msg = build_fall_alert_message(display_timestamp_from_iso(event_ts))
-                    line_sent = line.send(alert_msg)
-                    discord_sent = discord.send(alert_msg)
-                    logger.info(
-                        "fall alert sent: line=%s discord=%s",
-                        line_sent,
-                        discord_sent,
-                    )
-                    last_alert_ts = now_ts
+                    if _send_fall_alert(db, line, discord, logger):
+                        last_alert_ts = now_ts
             else:
                 buzzer.alert_off()
 

@@ -50,6 +50,7 @@ style: |
 | 現場警報 | 已完成 | 蜂鳴器與 LED GPIO 控制 |
 | 遠端通知 | 已完成 | LINE Messaging API + Discord webhook |
 | 資料紀錄 | 已完成 | SQLite 事件紀錄與 CSV 報表 |
+| 通知重試機制 | 已完成 | 通知失敗時不更新 cooldown，下一輪可再重試 |
 | 3D 列印外殼 | 已完成 | 已為 Raspberry Pi 製作保護與固定用外殼 |
 | 實地長時間測試 | 待進行 | 需累積場域資料與調整閾值 |
 
@@ -242,6 +243,25 @@ else:
 
 另外已加入 `ALERT_COOLDOWN_SECONDS`，避免同一次跌倒事件一直重複推播。
 
+最新改善：若 LINE 與 Discord 通知都失敗，系統不會更新 cooldown，下一輪仍可再次嘗試推播；若至少一個通知成功，才會進入冷卻時間。
+
+---
+
+# 已完成：通知失敗重試
+
+原本警報流程只要嘗試送出通知，就可能進入 cooldown。若當下網路不穩或 webhook 暫時失敗，後續重試可能會被延後。
+
+目前已修正為：
+
+```text
+if LINE 成功 or Discord 成功:
+    更新 last_alert_ts，進入 cooldown
+else:
+    不更新 last_alert_ts，下一輪可再次嘗試通知
+```
+
+這讓系統在網路短暫異常時更可靠，同時仍保留成功通知後的防洗版機制。
+
 ---
 
 # 已完成：資料紀錄
@@ -286,6 +306,7 @@ else:
 | `test_fall_classifier.py` | 跌倒判定、多幀平滑、誤判回歸 |
 | `test_db.py` | SQLite 寫入、讀取與報表 |
 | `test_notifiers.py` | LINE / Discord 通知與失敗回傳 |
+| `test_alert_cooldown.py` | 跌倒通知 cooldown 與失敗重試 |
 | `test_utils.py` | 台灣時區與中文告警訊息 |
 | `test_config.py` | 通知設定值載入 |
 
@@ -295,22 +316,39 @@ else:
 python -m pytest tests -q
 ```
 
+目前最新測試結果：`34 passed`。
+
 ---
 
-# 實測結果表格
+# 實測結果表格（待填）
 
-以下表格可在實際 Demo 或場域測試後填入數據。
+以下表格預留給實際 Demo 後填入數據，方便呈現系統穩定度與誤報情況。
 
 | 測試情境 | 測試次數 | 成功偵測 | 誤報 | 備註 |
 |---|---:|---:|---:|---|
-| 正常站立 | 10 | 待填 | 待填 | 驗證 NORMAL |
-| 正常坐下 | 10 | 待填 | 待填 | 驗證不誤報 |
-| 躺在床上 | 10 | 待填 | 待填 | 驗證 BED ROI / LYING_SAFE |
-| 模擬跌倒 | 10 | 待填 | 待填 | 驗證 FALLEN |
-| 翻身 | 10 | 待填 | 待填 | 驗證不誤判跌倒 |
-| 彎腰撿東西 | 10 | 待填 | 待填 | 驗證瞬間動作不誤報 |
-| 短暫遮擋 | 10 | 待填 | 待填 | 驗證 visibility 判斷 |
-| 長時間不動 | 10 | 待填 | 待填 | 驗證 SEDENTARY |
+| 正常站立 | 10 |  |  | 測試 NORMAL |
+| 正常坐下 | 10 |  |  | 測試非跌倒動作 |
+| 躺在床上 | 10 |  |  | 測試 BED ROI / LYING_SAFE |
+| 模擬跌倒 | 10 |  |  | 測試 FALLEN 警報 |
+| 翻身 | 10 |  |  | 測試是否誤判跌倒 |
+| 彎腰撿東西 | 10 |  |  | 測試瞬間姿態變化 |
+| 短暫遮擋 | 10 |  |  | 測試 visibility 穩定性 |
+| 長時間不動 | 10 |  |  | 測試 SEDENTARY |
+
+---
+
+# Demo 截圖預留頁
+
+請在完成實測後，將截圖放到對應位置。
+
+| 截圖位置 | 要放的內容 |
+|---|---|
+| 截圖 1 | MediaPipe 骨架偵測畫面 |
+| 截圖 2 | NORMAL / LYING_SAFE 狀態畫面 |
+| 截圖 3 | FALLEN 警報畫面 |
+| 截圖 4 | LINE 或 Discord 通知畫面 |
+| 截圖 5 | SQLite 事件紀錄或 CSV 報表 |
+| 截圖 6 | Raspberry Pi、蜂鳴器、LED、3D 列印外殼照片 |
 
 ---
 
@@ -324,23 +362,9 @@ python -m pytest tests -q
 4. 畫面上的姿態狀態顯示
 5. 床區 ROI 標記與顯示
 6. 模擬跌倒後的蜂鳴器、LED、LINE、Discord 通知
-7. SQLite 事件紀錄
-8. pytest 測試結果
-
----
-
-# Demo 截圖預留頁
-
-建議匯出 PPT 後，把以下畫面截圖補到此頁或拆成多頁：
-
-| 截圖位置 | 要證明的內容 |
-|---|---|
-| MediaPipe 骨架畫面 | 已成功偵測人體關鍵點 |
-| NORMAL / LYING_SAFE 畫面 | 正常與安全躺臥狀態可區分 |
-| FALLEN 警報畫面 | 跌倒時畫面顯示警告 |
-| LINE / Discord 通知 | 遠端通知已送出 |
-| SQLite / CSV 紀錄 | 系統有留下事件資料 |
-| 蜂鳴器、LED、3D 外殼照片 | 硬體警報與實體裝置已完成 |
+7. 通知失敗時可再次嘗試推播
+8. SQLite 事件紀錄
+9. pytest 測試結果
 
 ---
 
@@ -355,7 +379,7 @@ python -m pytest tests -q
 - 驗證誤報率是否能達到目標
 - 測試正式 LINE token / Discord webhook 長時間穩定度
 - 確認 Raspberry Pi、Camera、GPIO、3D 列印外殼整體安裝穩定性
-- 補充端到端整合測試
+- 補充更完整的端到端整合測試
 
 ---
 
@@ -365,13 +389,13 @@ python -m pytest tests -q
 1. 依現場鏡頭角度標記 BED ROI
 2. 累積 8 小時以上測試資料
 3. 依誤報與漏報調整 `FALL_EVENT_*`、`BED_ROI_*`
-4. 補強通知失敗重試與長時間運行測試
+4. 補強長時間運行測試與實地通知穩定度紀錄
 
 ---
 
 # 結論
 
-目前專案已完成第一版可展示系統：包含姿態偵測、跌倒判定、狀態機、`LYING_SAFE` 安全躺臥分流、蜂鳴器與 LED、LINE / Discord 通知、SQLite 紀錄、BED ROI 抑制、單元測試、部署工具，以及 Raspberry Pi 的 3D 列印外殼。
+目前專案已完成第一版可展示系統：包含姿態偵測、跌倒判定、狀態機、`LYING_SAFE` 安全躺臥分流、蜂鳴器與 LED、LINE / Discord 通知、通知失敗重試、SQLite 紀錄、BED ROI 抑制、單元測試、部署工具，以及 Raspberry Pi 的 3D 列印外殼。
 
 後續重點是把系統放到實際場域中長時間測試，依照資料調整閾值與狀態設計，讓系統更穩定、更接近可實際使用的照護輔助裝置。
 
