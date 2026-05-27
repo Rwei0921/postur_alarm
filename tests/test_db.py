@@ -71,3 +71,54 @@ def test_reporter_reads_rows_written_by_event_db(tmp_path):
     assert len(lines) == 2
     assert lines[0] == "ts,event_type,state,payload"
     assert "2026-03-20T08:30:00,fall,FALLEN," in lines[1]
+
+
+def test_reporter_generates_daily_summary_report(tmp_path):
+    db_path = tmp_path / "events.db"
+    report_dir = tmp_path / "reports"
+
+    db = EventDB(str(db_path))
+    try:
+        db.log_event(
+            "fall",
+            "FALLEN",
+            payload={"line_sent": True, "discord_sent": False, "message_sent": True},
+            ts="2026-03-20T08:30:00",
+        )
+        db.log_event(
+            "fall",
+            "FALLEN",
+            payload={"line_sent": False, "discord_sent": False, "message_sent": False},
+            ts="2026-03-20T09:30:00",
+        )
+        db.log_event(
+            "state_change",
+            "LYING_SAFE",
+            payload={"previous_state": "NORMAL"},
+            ts="2026-03-20T10:30:00",
+        )
+        db.log_event(
+            "state_change",
+            "SEDENTARY",
+            payload={"previous_state": "NORMAL"},
+            ts="2026-03-20T11:30:00",
+        )
+    finally:
+        db.close()
+
+    reporter = Reporter(str(db_path), str(report_dir))
+    output = reporter.generate_daily_summary_report(day=date(2026, 3, 20))
+    rows = output.read_text(encoding="utf-8").splitlines()
+
+    assert rows == [
+        "metric,value",
+        "total_events,4",
+        "fall_events,2",
+        "state_changes,2",
+        "lying_safe_events,1",
+        "sedentary_events,1",
+        "line_sent,1",
+        "discord_sent,0",
+        "message_sent,1",
+        "message_failed,1",
+    ]

@@ -84,23 +84,33 @@ def _send_fall_alert(
     line: _MessageSender,
     discord: _MessageSender,
     logger,
+    payload: dict[str, Any] | None = None,
 ) -> bool:
     event_ts = now_timestamp()
-    db.log_event(
-        event_type="fall",
-        state=PostureState.FALLEN.value,
-        payload={"source": "vision"},
-        ts=event_ts,
-    )
     alert_msg = build_fall_alert_message(display_timestamp_from_iso(event_ts))
     line_sent = line.send(alert_msg)
     discord_sent = discord.send(alert_msg)
+    message_sent = line_sent or discord_sent
+    event_payload = {
+        "source": "vision",
+        "alert_level": "critical",
+        **(payload or {}),
+        "line_sent": line_sent,
+        "discord_sent": discord_sent,
+        "message_sent": message_sent,
+    }
+    db.log_event(
+        event_type="fall",
+        state=PostureState.FALLEN.value,
+        payload=event_payload,
+        ts=event_ts,
+    )
     logger.info(
         "fall alert sent: line=%s discord=%s",
         line_sent,
         discord_sent,
     )
-    return line_sent or discord_sent
+    return message_sent
 
 
 def _interactive_mark_bed_roi(cam: Camera, cv2, scale: float, logger) -> None:
@@ -370,6 +380,7 @@ def run() -> None:
 
             landmarks = pose_estimator.extract_landmarks(frame)
             person_present = person_detector.has_person(landmarks) if landmarks else False
+            fall_payload: dict[str, Any] = {"person_present": person_present}
 
             fall_detected = False
             hip_speed = 0.0
@@ -382,6 +393,15 @@ def run() -> None:
                     features.hip_center_y,
                 ))
                 safe_lying_detected = fall_detected and in_bed_roi and not features.has_fall_event
+                fall_payload.update({
+                    "trunk_angle_deg": round(features.trunk_angle_deg, 3),
+                    "hip_shoulder_diff": round(features.hip_shoulder_diff, 3),
+                    "hip_speed": round(features.hip_speed, 3),
+                    "fall_score": round(features.fall_score, 3),
+                    "has_fall_event": features.has_fall_event,
+                    "in_bed_roi": in_bed_roi,
+                    "safe_lying_detected": safe_lying_detected,
+                })
                 if fall_detected and safe_lying_detected:
                     fall_detected = False
 
@@ -406,7 +426,7 @@ def run() -> None:
                 buzzer.alert_on()
                 now_ts = time.monotonic()
                 if (now_ts - last_alert_ts) >= config.ALERT_COOLDOWN_SECONDS:
-                    if _send_fall_alert(db, line, discord, logger):
+                    if _send_fall_alert(db, line, discord, logger, fall_payload):
                         last_alert_ts = now_ts
             else:
                 buzzer.alert_off()

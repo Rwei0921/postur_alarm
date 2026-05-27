@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import main as app
 from storage.db_sqlite import EventDB
 
@@ -37,7 +39,18 @@ def test_fall_alert_success_advances_cooldown_and_writes_event(monkeypatch):
         last_alert_ts = 10.0
         now_ts = 70.0
 
-        if app._send_fall_alert(db, line, discord, logger):
+        if app._send_fall_alert(
+            db,
+            line,
+            discord,
+            logger,
+            {
+                "trunk_angle_deg": 66.2,
+                "hip_speed": 0.42,
+                "fall_score": 0.8,
+                "in_bed_roi": False,
+            },
+        ):
             last_alert_ts = now_ts
 
         rows = db.fetch_recent(limit=10)
@@ -45,15 +58,20 @@ def test_fall_alert_success_advances_cooldown_and_writes_event(monkeypatch):
         db.close()
 
     assert last_alert_ts == now_ts
-    assert rows == [
-        {
-            "id": 1,
-            "ts": fixed_ts,
-            "event_type": "fall",
-            "state": app.PostureState.FALLEN.value,
-            "payload": '{"source": "vision"}',
-        }
-    ]
+    assert rows[0]["event_type"] == "fall"
+    assert rows[0]["state"] == app.PostureState.FALLEN.value
+    assert rows[0]["ts"] == fixed_ts
+    assert json.loads(rows[0]["payload"]) == {
+        "source": "vision",
+        "alert_level": "critical",
+        "trunk_angle_deg": 66.2,
+        "hip_speed": 0.42,
+        "fall_score": 0.8,
+        "in_bed_roi": False,
+        "line_sent": False,
+        "discord_sent": True,
+        "message_sent": True,
+    }
     assert line.messages == ["姿勢警報：偵測到跌倒，時間：2026年04月09日 02:14:32"]
     assert discord.messages == line.messages
 
@@ -81,14 +99,15 @@ def test_fall_alert_total_failure_keeps_cooldown_and_writes_event(monkeypatch):
         db.close()
 
     assert last_alert_ts == 10.0
-    assert rows == [
-        {
-            "id": 1,
-            "ts": fixed_ts,
-            "event_type": "fall",
-            "state": app.PostureState.FALLEN.value,
-            "payload": '{"source": "vision"}',
-        }
-    ]
+    assert rows[0]["event_type"] == "fall"
+    assert rows[0]["state"] == app.PostureState.FALLEN.value
+    assert rows[0]["ts"] == fixed_ts
+    assert json.loads(rows[0]["payload"]) == {
+        "source": "vision",
+        "alert_level": "critical",
+        "line_sent": False,
+        "discord_sent": False,
+        "message_sent": False,
+    }
     assert line.messages == ["姿勢警報：偵測到跌倒，時間：2026年04月09日 02:14:32"]
     assert discord.messages == line.messages

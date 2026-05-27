@@ -51,6 +51,7 @@ style: |
 | 遠端通知 | 已完成 | LINE Messaging API + Discord webhook |
 | 資料紀錄 | 已完成 | SQLite 事件紀錄與 CSV 報表 |
 | 通知重試機制 | 已完成 | 通知失敗時不更新 cooldown，下一輪可再重試 |
+| 摘要統計報表 | 已完成 | 可輸出每日 fall、state change、通知成功/失敗統計 |
 | 3D 列印外殼 | 已完成 | 已為 Raspberry Pi 製作保護與固定用外殼 |
 | 實地長時間測試 | 待進行 | 需累積場域資料與調整閾值 |
 
@@ -273,11 +274,50 @@ else:
 - 自動建立 `data/events.db`
 - 自動建立 events table
 - 記錄 state change 與 fall event
-- payload 使用 JSON 字串保存
+- payload 使用 JSON 字串保存跌倒特徵與通知結果
 - `Reporter` 可輸出每日 CSV 報表
+- `Reporter` 可輸出每日摘要統計報表
 - 時間統一使用 `APP_TIMEZONE`，預設為 `Asia/Taipei`
 
 這讓後續可以累積資料，分析誤報率與事件發生時間。
+
+---
+
+# 已完成：事件資料更完整
+
+跌倒事件目前不只記錄「有警報」，也會保存判斷依據與通知結果。
+
+```text
+fall event payload:
+  trunk_angle_deg
+  hip_shoulder_diff
+  hip_speed
+  fall_score
+  has_fall_event
+  in_bed_roi
+  safe_lying_detected
+  line_sent / discord_sent / message_sent
+```
+
+這些欄位可用來回頭分析誤報原因，也能作為調整跌倒閾值的依據。
+
+---
+
+# 已完成：每日摘要報表
+
+除了事件明細 CSV，現在也能產生每日摘要統計。
+
+摘要內容包含：
+
+- 總事件數
+- 跌倒事件數
+- 狀態變化次數
+- `LYING_SAFE` 次數
+- `SEDENTARY` 次數
+- LINE / Discord 通知成功次數
+- 通知成功與失敗次數
+
+這讓 Demo 後可以直接整理成報告數據，而不是只看原始事件列表。
 
 ---
 
@@ -316,7 +356,7 @@ else:
 python -m pytest tests -q
 ```
 
-目前最新測試結果：`34 passed`。
+目前最新測試結果：`35 passed`。
 
 ---
 
@@ -348,7 +388,8 @@ python -m pytest tests -q
 | 截圖 3 | FALLEN 警報畫面 |
 | 截圖 4 | LINE 或 Discord 通知畫面 |
 | 截圖 5 | SQLite 事件紀錄或 CSV 報表 |
-| 截圖 6 | Raspberry Pi、蜂鳴器、LED、3D 列印外殼照片 |
+| 截圖 6 | 每日摘要統計報表 |
+| 截圖 7 | Raspberry Pi、蜂鳴器、LED、3D 列印外殼照片 |
 
 ---
 
@@ -363,8 +404,9 @@ python -m pytest tests -q
 5. 床區 ROI 標記與顯示
 6. 模擬跌倒後的蜂鳴器、LED、LINE、Discord 通知
 7. 通知失敗時可再次嘗試推播
-8. SQLite 事件紀錄
-9. pytest 測試結果
+8. SQLite 詳細事件紀錄
+9. 每日摘要統計報表
+10. pytest 測試結果
 
 ---
 
@@ -395,7 +437,7 @@ python -m pytest tests -q
 
 # 結論
 
-目前專案已完成第一版可展示系統：包含姿態偵測、跌倒判定、狀態機、`LYING_SAFE` 安全躺臥分流、蜂鳴器與 LED、LINE / Discord 通知、通知失敗重試、SQLite 紀錄、BED ROI 抑制、單元測試、部署工具，以及 Raspberry Pi 的 3D 列印外殼。
+目前專案已完成第一版可展示系統：包含姿態偵測、跌倒判定、狀態機、`LYING_SAFE` 安全躺臥分流、蜂鳴器與 LED、LINE / Discord 通知、通知失敗重試、SQLite 詳細紀錄、每日摘要統計報表、BED ROI 抑制、單元測試、部署工具，以及 Raspberry Pi 的 3D 列印外殼。
 
 後續重點是把系統放到實際場域中長時間測試，依照資料調整閾值與狀態設計，讓系統更穩定、更接近可實際使用的照護輔助裝置。
 
